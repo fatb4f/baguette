@@ -50,6 +50,37 @@ Inside the guest image, preserve or improve the minimum integration path:
 
 Do not assume full desktop integration yet. `garcon`/`sommelier` are out of scope for the first working artifact unless they become necessary for boot or shell access.
 
+## Environment guidance
+
+The build environment is an image based on **Ubuntu 24.04**.
+
+Assume the only supported customization path is the repository setup script:
+
+- `scripts/setup-host.sh`
+
+When changing host dependencies:
+
+- prefer editing `scripts/setup-host.sh` instead of scattering `apt-get` calls through workflows
+- keep the package list as small and stable as possible
+- only add packages that fix a concrete build or runtime issue
+- treat the host as ephemeral and re-provisioned on each run
+
+### Current host package contract
+
+`scripts/setup-host.sh` currently installs:
+
+- `docker.io`
+- `btrfs-progs`
+- `qemu-utils`
+- `util-linux`
+- `zstd`
+- `rsync`
+- `curl`
+- `ca-certificates`
+- `git`
+
+Do not add heavier packages such as partitioning stacks, desktop stacks, or alternate build systems unless clearly required by a failing workflow or by the Baguette image contract.
+
 ## Repository guidance
 
 ### Workflow
@@ -59,6 +90,7 @@ The main workflow is under `.github/workflows/`.
 When editing workflows:
 
 - prefer `ubuntu-24.04`
+- call `scripts/setup-host.sh` early in the workflow
 - keep dependencies explicit
 - keep artifact names stable unless there is a strong reason to rename them
 - avoid adding unnecessary matrix complexity until the single-runner path is stable
@@ -79,11 +111,12 @@ When editing scripts:
 
 If the build is failing, focus on these likely problem areas first:
 
-1. Arch bootstrap in Docker on GitHub Actions
-2. use of `pacstrap` and related packages
-3. loop device and mount behavior when creating the raw image
-4. Btrfs subvolume creation and default-subvolume selection
-5. artifact generation and upload paths
+1. host dependency setup through `scripts/setup-host.sh`
+2. Arch bootstrap in Docker on GitHub Actions
+3. use of `pacstrap` and related packages
+4. loop device and mount behavior when creating the raw image
+5. Btrfs subvolume creation and default-subvolume selection
+6. artifact generation and upload paths
 
 ## What not to do yet
 
@@ -109,5 +142,6 @@ If behavior changes, update `README.md` with:
 
 - exact artifact names
 - exact workflow behavior
+- exact host setup requirements
 - exact ChromeOS import/test steps
 - any known limitations or open risks
