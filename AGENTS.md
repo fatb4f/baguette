@@ -30,6 +30,15 @@ The intended outputs are:
 - `out/arch-baguette.img`
 - `out/arch-baguette.img.zst`
 
+The GitHub Actions artifact is uploaded as:
+
+- artifact name: `arch-baguette-image`
+- artifact paths (explicit, no wildcard):
+  - `out/arch-rootfs.tar`
+  - `out/arch-rootfs.tar.zst`
+  - `out/arch-baguette.img`
+  - `out/arch-baguette.img.zst`
+
 The image should be:
 
 - raw disk image
@@ -87,6 +96,18 @@ Do not add heavier packages such as partitioning stacks, desktop stacks, or alte
 
 The main workflow is under `.github/workflows/`.
 
+Current primary workflow:
+
+- `.github/workflows/build-arch-baguette.yml`
+- triggers: `push` to `main`, `pull_request`, and `workflow_dispatch`
+- runner: `ubuntu-24.04`
+- required step order:
+  1. setup host via `scripts/setup-host.sh`
+  2. build rootfs via `scripts/build-rootfs-tarball.sh`
+  3. build image via `scripts/make-baguette-image.sh`
+  4. validate all four artifact files exist before upload
+  5. upload `arch-baguette-image` artifact with explicit file list
+
 When editing workflows:
 
 - prefer `ubuntu-24.04`
@@ -135,6 +156,13 @@ Assume the real acceptance path is:
 4. The VM boots far enough for shell-level validation.
 
 Optimize for reaching that milestone first.
+
+Concrete ChromeOS flow to preserve in docs/tests:
+
+1. `zstd -d arch-baguette.img.zst -o arch-baguette.img`
+2. `vmc create --vm-type BAGUETTE --source /path/to/arch-baguette.img arch-baguette-arch`
+3. `vmc start arch-baguette-arch`
+4. `vsh --vm_name=arch-baguette-arch --owner_id=$(whoami)`
 
 ## Documentation expectations
 

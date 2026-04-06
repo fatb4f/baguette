@@ -16,8 +16,8 @@ set -euo pipefail
 
 pacman-key --init
 pacman-key --populate archlinux
-pacman -Syu --noconfirm
-pacman -S --noconfirm arch-install-scripts
+pacman -Sy --noconfirm archlinux-keyring
+pacman -S --noconfirm --needed arch-install-scripts
 
 mkdir -p /work/rootfs
 pacstrap -c -G -M /work/rootfs \
@@ -40,6 +40,8 @@ pacstrap -c -G -M /work/rootfs \
   util-linux
 EOF
 chmod +x "$WORKDIR/build-rootfs-in-docker.sh"
+
+docker pull archlinux:latest
 
 docker run --rm \
   -v "$WORKDIR:/work" \

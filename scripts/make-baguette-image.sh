@@ -30,8 +30,7 @@ LOOP=$(losetup --show -fP "$IMG")
 mkfs.btrfs -f "$LOOP"
 mount "$LOOP" "$MNT"
 btrfs subvolume create "$MNT/rootfs_subvol"
-mkdir -p "$MNT/rootfs_subvol"
-tar -C "$MNT/rootfs_subvol" -xpf "$OUTDIR/arch-rootfs.tar"
+tar -C "$MNT/rootfs_subvol" -xpf "$OUTDIR/arch-rootfs.tar" --xattrs --acls
 sync
 ROOT_SUBVOL_ID=$(btrfs subvolume list "$MNT" | awk '$NF == "rootfs_subvol" { print $2; exit }')
 if [[ -z "$ROOT_SUBVOL_ID" ]]; then
@@ -39,7 +38,13 @@ if [[ -z "$ROOT_SUBVOL_ID" ]]; then
   exit 1
 fi
 btrfs subvolume set-default "$ROOT_SUBVOL_ID" "$MNT"
+DEFAULT_SUBVOL_ID="$(btrfs subvolume get-default "$MNT" | awk '{print $2}')"
+if [[ "$DEFAULT_SUBVOL_ID" != "$ROOT_SUBVOL_ID" ]]; then
+  echo "Failed to set rootfs_subvol as default subvolume" >&2
+  exit 1
+fi
 
+mkdir -p "$MNT/rootfs_subvol/etc"
 cat > "$MNT/rootfs_subvol/etc/fstab" <<'EOF'
 /dev/vdb / btrfs defaults 0 0
 LABEL=cros-vm-tools /opt/google/cros-containers auto ro,nofail 0 0

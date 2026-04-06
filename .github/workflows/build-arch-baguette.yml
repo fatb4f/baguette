@@ -35,9 +35,20 @@ jobs:
           chmod +x scripts/*.sh
           sudo ./scripts/make-baguette-image.sh
 
+      - name: Validate artifacts
+        run: |
+          test -f out/arch-rootfs.tar
+          test -f out/arch-rootfs.tar.zst
+          test -f out/arch-baguette.img
+          test -f out/arch-baguette.img.zst
+
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
           name: arch-baguette-image
-          path: out/*
+          path: |
+            out/arch-rootfs.tar
+            out/arch-rootfs.tar.zst
+            out/arch-baguette.img
+            out/arch-baguette.img.zst
           if-no-files-found: error
