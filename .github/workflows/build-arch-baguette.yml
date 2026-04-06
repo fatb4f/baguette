@@ -20,15 +20,10 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Install host dependencies
+      - name: Setup host
         run: |
-          sudo apt-get update
-          sudo apt-get install -y \
-            btrfs-progs \
-            curl \
-            qemu-utils \
-            rsync \
-            zstd
+          chmod +x scripts/setup-host.sh
+          ./scripts/setup-host.sh
 
       - name: Build Arch rootfs tarball
         run: |

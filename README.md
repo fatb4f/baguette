@@ -11,6 +11,20 @@ The GitHub Actions workflow builds:
 - `out/arch-baguette.img`
 - `out/arch-baguette.img.zst`
 
+## Host setup
+
+The workflow uses `scripts/setup-host.sh` to prepare the Ubuntu 24.04 host with:
+
+- `docker.io`
+- `btrfs-progs`
+- `qemu-utils`
+- `util-linux`
+- `zstd`
+- `rsync`
+- `curl`
+- `ca-certificates`
+- `git`
+
 ## Current shape
 
 This is an initial builder that:
