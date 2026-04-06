@@ -1,0 +1,48 @@
+name: build-arch-baguette
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+  pull_request:
+
+concurrency:
+  group: build-arch-baguette-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install host dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            btrfs-progs \
+            curl \
+            qemu-utils \
+            rsync \
+            zstd
+
+      - name: Build Arch rootfs tarball
+        run: |
+          chmod +x scripts/*.sh
+          ./scripts/build-rootfs-tarball.sh
+
+      - name: Build Baguette image
+        run: |
+          chmod +x scripts/*.sh
+          sudo ./scripts/make-baguette-image.sh
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: arch-baguette-image
+          path: out/*
+          if-no-files-found: error
