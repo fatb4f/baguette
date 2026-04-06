@@ -1,0 +1,31 @@
+name: codex-agent
+
+on:
+  workflow_dispatch:
+    inputs:
+      prompt:
+        description: Task for Codex to perform
+        required: true
+        type: string
+
+permissions:
+  contents: write
+  pull-requests: write
+  issues: write
+
+jobs:
+  codex:
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Run Codex
+        uses: openai/codex-action@v1
+        with:
+          prompt: ${{ github.event.inputs.prompt }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+        env:
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
