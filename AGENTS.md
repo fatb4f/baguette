@@ -17,13 +17,28 @@ Work in this order:
 
 1. Make the GitHub Actions workflow complete successfully.
 2. Make the produced artifact structurally correct.
-3. Minimize changes and preserve the current repo layout unless a change is necessary.
-4. Prefer small, reviewable commits and simple shell scripts.
-5. Defer GUI integration until the base image path is stable.
+3. Make the uploaded artifact match the documented contract exactly.
+4. Minimize changes and preserve the current repo layout unless a change is necessary.
+5. Prefer small, reviewable commits and simple shell scripts.
+6. Defer GUI integration until the base image path is stable.
+
+## Current workflow contract
+
+Primary workflow: `.github/workflows/build-arch-baguette.yml`
+
+On push to `main`, pull requests, and manual dispatch, the workflow should:
+
+1. Run `scripts/setup-host.sh` on `ubuntu-24.04`.
+2. Build an Arch rootfs tarball with `scripts/build-rootfs-tarball.sh`.
+3. Build a raw Btrfs image with `scripts/make-baguette-image.sh`.
+4. Validate that all expected output files exist.
+5. Upload a single artifact named `arch-baguette-image`.
+
+Keep this sequence stable unless there is a concrete reason to change it.
 
 ## Current artifact contract
 
-The intended outputs are:
+The uploaded artifact must contain exactly:
 
 - `out/arch-rootfs.tar`
 - `out/arch-rootfs.tar.zst`
@@ -32,10 +47,12 @@ The intended outputs are:
 
 The image should be:
 
-- raw disk image
-- Btrfs filesystem
-- `rootfs_subvol` created
-- `rootfs_subvol` set as the default subvolume
+- a raw disk image
+- formatted as Btrfs
+- contain a `rootfs_subvol` subvolume
+- have `rootfs_subvol` set as the default subvolume
+
+The workflow should validate the presence of all four output files before artifact upload.
 
 ## ChromeOS/Baguette assumptions
 
@@ -48,7 +65,7 @@ Inside the guest image, preserve or improve the minimum integration path:
 - provide `/usr/sbin/usermod`
 - preserve groups expected by the environment such as `kvm`, `netdev`, `sudo`, and `tss`
 
-Do not assume full desktop integration yet. `garcon`/`sommelier` are out of scope for the first working artifact unless they become necessary for boot or shell access.
+Do not assume full desktop integration yet. `garcon` and `sommelier` are out of scope for the first working artifact unless they become necessary for boot or shell access.
 
 ## Environment guidance
 
@@ -83,7 +100,7 @@ Do not add heavier packages such as partitioning stacks, desktop stacks, or alte
 
 ## Repository guidance
 
-### Workflow
+### Workflows
 
 The main workflow is under `.github/workflows/`.
 
@@ -93,7 +110,8 @@ When editing workflows:
 - call `scripts/setup-host.sh` early in the workflow
 - keep dependencies explicit
 - keep artifact names stable unless there is a strong reason to rename them
-- avoid adding unnecessary matrix complexity until the single-runner path is stable
+- upload explicit artifact paths instead of broad globs when practical
+- avoid unnecessary matrix complexity until the single-runner path is stable
 
 ### Scripts
 
@@ -107,16 +125,47 @@ When editing scripts:
 - prefer deterministic behavior over cleverness
 - avoid hidden network dependencies beyond the explicit Arch bootstrap path
 
+## Build-specific guidance
+
+### `scripts/build-rootfs-tarball.sh`
+
+Prefer a conservative Arch bootstrap flow.
+
+Current expectations:
+
+- initialize and populate pacman keys
+- refresh `archlinux-keyring`
+- install `arch-install-scripts` with `--needed`
+- explicitly `docker pull archlinux:latest` before running the container
+- create the rootfs with `pacstrap`
+
+Avoid unnecessary full system upgrades in the bootstrap container unless a concrete issue requires one.
+
+### `scripts/make-baguette-image.sh`
+
+Current expectations:
+
+- create `out/arch-baguette.img` as a raw image
+- format it as Btrfs
+- create `rootfs_subvol`
+- extract `out/arch-rootfs.tar` into `rootfs_subvol` with xattrs and ACLs preserved
+- set `rootfs_subvol` as the default subvolume
+- verify that the default subvolume was actually set
+- create `/etc/fstab` inside the extracted guest if needed
+- compress the final image to `out/arch-baguette.img.zst`
+
+Prefer explicit verification over silent assumptions.
+
 ## What to optimize first
 
 If the build is failing, focus on these likely problem areas first:
 
 1. host dependency setup through `scripts/setup-host.sh`
 2. Arch bootstrap in Docker on GitHub Actions
-3. use of `pacstrap` and related packages
+3. `pacstrap` and related package setup
 4. loop device and mount behavior when creating the raw image
 5. Btrfs subvolume creation and default-subvolume selection
-6. artifact generation and upload paths
+6. artifact validation and upload paths
 
 ## What not to do yet
 
@@ -131,17 +180,39 @@ Assume the real acceptance path is:
 
 1. GitHub Actions builds the artifact successfully.
 2. The image is downloaded to ChromeOS.
-3. The image is imported through the Baguette/`vmc create --vm-type BAGUETTE --source ...` flow.
+3. The image is imported through the Baguette / `vmc create --vm-type BAGUETTE --source ...` flow.
 4. The VM boots far enough for shell-level validation.
 
 Optimize for reaching that milestone first.
+
+## ChromeOS import / test expectations
+
+After downloading `arch-baguette.img.zst` from the Actions artifact, the documented validation flow is:
+
+1. Decompress:
+   - `zstd -d arch-baguette.img.zst -o arch-baguette.img`
+2. Import/create:
+   - `vmc create --vm-type BAGUETTE --source /path/to/arch-baguette.img arch-baguette-arch`
+3. Start and open a shell:
+   - `vmc start arch-baguette-arch`
+   - `vsh --vm_name=arch-baguette-arch --owner_id=$(whoami)`
+4. Validate in guest:
+   - `/` is Btrfs on the default `rootfs_subvol`
+   - `/opt/google/cros-containers` mount unit is present
+   - `vshd` and `maitred` services are available
 
 ## Documentation expectations
 
 If behavior changes, update `README.md` with:
 
-- exact artifact names
 - exact workflow behavior
+- exact artifact names
 - exact host setup requirements
 - exact ChromeOS import/test steps
 - any known limitations or open risks
+
+## Known limitations / open risks
+
+- Boot/runtime behavior may still vary by ChromeOS channel/build and Baguette feature maturity.
+- `port_listener` should only be enabled when present at `/opt/google/cros-containers/bin/port_listener`.
+- This repository currently targets first-pass shell-level bring-up, not GUI integration.
