@@ -2,9 +2,21 @@
 
 First-pass Arch Baguette image builder for ChromeOS.
 
-## Current output
+## GitHub Actions workflow
 
-The GitHub Actions workflow builds:
+Workflow: `.github/workflows/build-arch-baguette.yml`
+
+On push to `main`, pull requests, and manual dispatch, the workflow:
+
+1. Runs `scripts/setup-host.sh` on `ubuntu-24.04`.
+2. Builds an Arch rootfs tarball with `scripts/build-rootfs-tarball.sh`.
+3. Builds a raw Btrfs image with `scripts/make-baguette-image.sh`.
+4. Validates that all expected output files exist.
+5. Uploads a single artifact named `arch-baguette-image`.
+
+## Artifact contract
+
+The uploaded artifact contains exactly:
 
 - `out/arch-rootfs.tar`
 - `out/arch-rootfs.tar.zst`
@@ -36,6 +48,24 @@ This is an initial builder that:
 - sets `rootfs_subvol` as the default subvolume
 - compresses the resulting artifacts with `zstd`
 
-## Expected next iteration
+## ChromeOS Baguette import / test steps
 
-Once the first artifact is confirmed to build cleanly in Actions, the next step is to test the image on ChromeOS with the Baguette import flow and then tighten anything the guest contract still requires.
+On ChromeOS (Developer shell), after downloading `arch-baguette.img.zst` from the Actions artifact:
+
+1. Decompress the image:
+   - `zstd -d arch-baguette.img.zst -o arch-baguette.img`
+2. Import/create the VM:
+   - `vmc create --vm-type BAGUETTE --source /path/to/arch-baguette.img arch-baguette-arch`
+3. Start and open a shell:
+   - `vmc start arch-baguette-arch`
+   - `vsh --vm_name=arch-baguette-arch --owner_id=$(whoami)`
+4. Basic validation inside the guest:
+   - Confirm `/` is Btrfs on the `rootfs_subvol` default subvolume.
+   - Confirm `/opt/google/cros-containers` mount unit is present.
+   - Confirm `vshd` and `maitred` services are available.
+
+## Known limitations / open risks
+
+- Boot/runtime behavior may still vary by ChromeOS channel/build and Baguette feature maturity.
+- `port_listener` is enabled only when present at `/opt/google/cros-containers/bin/port_listener`.
+- This repository currently targets first-pass shell-level bring-up, not GUI integration.
