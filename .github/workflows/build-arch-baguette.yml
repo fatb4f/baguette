@@ -30,7 +30,7 @@ jobs:
       - name: Build Arch rootfs tarball
         run: |
           chmod +x scripts/*.sh
-          ./scripts/build-rootfs-tarball.sh
+          sudo ./scripts/build-rootfs-tarball.sh
 
       - name: Build Baguette image
         run: |
