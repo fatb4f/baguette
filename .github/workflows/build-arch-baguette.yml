@@ -12,8 +12,51 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  build:
+  build-rootfs:
     runs-on: ubuntu-24.04
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      - name: Restore rootfs cache
+        id: rootfs-cache
+        uses: actions/cache@v4
+        with:
+          path: |
+            out/arch-rootfs.tar
+            out/arch-rootfs.tar.zst
+          key: arch-rootfs-${{ runner.os }}-${{ hashFiles('scripts/build-rootfs-tarball.sh', 'scripts/install-overlay.sh') }}
+          restore-keys: |
+            arch-rootfs-${{ runner.os }}-
+
+      - name: Setup host
+        if: hashFiles('out/arch-rootfs.tar') == ''
+        run: |
+          chmod +x scripts/setup-host.sh
+          ./scripts/setup-host.sh
+
+      - name: Build Arch rootfs tarball
+        if: hashFiles('out/arch-rootfs.tar') == ''
+        run: |
+          chmod +x scripts/*.sh
+          sudo ./scripts/build-rootfs-tarball.sh
+
+      - name: Upload rootfs artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: arch-rootfs-intermediate
+          path: |
+            out/arch-rootfs.tar
+            out/arch-rootfs.tar.zst
+          if-no-files-found: error
+
+  build-image:
+    runs-on: ubuntu-24.04
+    needs: build-rootfs
     permissions:
       contents: read
     steps:
@@ -27,10 +70,11 @@ jobs:
           chmod +x scripts/setup-host.sh
           ./scripts/setup-host.sh
 
-      - name: Build Arch rootfs tarball
-        run: |
-          chmod +x scripts/*.sh
-          sudo ./scripts/build-rootfs-tarball.sh
+      - name: Download rootfs artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: arch-rootfs-intermediate
+          path: .
 
       - name: Build Baguette image
         run: |
