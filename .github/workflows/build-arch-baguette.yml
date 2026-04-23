@@ -74,7 +74,7 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: arch-rootfs-intermediate
-          path: .
+          path: out
 
       - name: Build Baguette image
         run: |
