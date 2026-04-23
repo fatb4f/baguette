@@ -20,7 +20,6 @@ zstd -t "$IMG_ZST"
 tar -tf "$ROOTFS_TAR" > "$ROOTFS_LIST"
 
 for path in \
-  "etc/fstab" \
   "etc/hostname" \
   "etc/systemd/system/opt-google-cros-containers.mount" \
   "etc/systemd/system/vshd.service" \
