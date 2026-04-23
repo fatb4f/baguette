@@ -44,6 +44,7 @@ chmod +x "$WORKDIR/build-rootfs-in-docker.sh"
 sudo docker pull archlinux:latest
 
 sudo docker run --rm \
+  --privileged \
   -v "$WORKDIR:/work" \
   archlinux:latest \
   /work/build-rootfs-in-docker.sh
