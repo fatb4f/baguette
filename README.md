@@ -10,7 +10,7 @@ On push to `main`, pull requests, and manual dispatch, the workflow:
 
 1. Runs `scripts/setup-host.sh` on `ubuntu-24.04`.
 2. Builds an Arch rootfs tarball with `scripts/build-rootfs-tarball.sh`.
-3. Builds a raw Btrfs image with `scripts/make-baguette-image.sh`.
+3. Builds a raw Btrfs image with `scripts/baguette.py` via `scripts/make-baguette-image.sh`.
 4. Validates artifact presence, compression integrity, and the expected guest integration files.
 5. Uploads a single artifact named `arch-baguette-image`.
 
@@ -43,7 +43,7 @@ This is an initial builder that:
 
 - bootstraps a minimal Arch rootfs inside Docker
 - adds ChromeOS Baguette integration units for `vshd`, `maitred`, and `port_listener`
-- creates a raw Btrfs image
+- creates a raw Btrfs image with the Python `scripts/baguette.py` entrypoint
 - creates `rootfs_subvol`
 - sets `rootfs_subvol` as the default subvolume
 - compresses the resulting artifacts with `zstd`
