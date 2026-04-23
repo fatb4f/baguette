@@ -21,7 +21,7 @@ tar -tf "$ROOTFS_TAR" > "$ROOTFS_LIST"
 
 for path in \
   "etc/hostname" \
-  "etc/systemd/system/opt-google-cros\\x2dcontainers.mount" \
+  "etc/systemd/system/opt-google-cros\\\\x2dcontainers.mount" \
   "etc/systemd/system/vshd.service" \
   "etc/systemd/system/maitred.service" \
   "usr/bin/usermod"
