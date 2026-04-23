@@ -24,7 +24,7 @@ for path in \
   "etc/systemd/system/opt-google-cros-containers.mount" \
   "etc/systemd/system/vshd.service" \
   "etc/systemd/system/maitred.service" \
-  "usr/sbin/usermod"
+  "usr/bin/usermod"
 do
   if ! grep -Fxq "./$path" "$ROOTFS_LIST" && ! grep -Fxq "$path" "$ROOTFS_LIST"; then
     echo "missing rootfs entry: $path" >&2
