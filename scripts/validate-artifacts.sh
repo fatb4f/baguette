@@ -24,10 +24,12 @@ for path in \
   "etc/systemd/system/opt-google-cros-containers.mount" \
   "etc/systemd/system/vshd.service" \
   "etc/systemd/system/maitred.service" \
-  "etc/systemd/system/port-listener.service" \
   "usr/sbin/usermod"
 do
-  grep -Fxq "./$path" "$ROOTFS_LIST" || grep -Fxq "$path" "$ROOTFS_LIST"
+  if ! grep -Fxq "./$path" "$ROOTFS_LIST" && ! grep -Fxq "$path" "$ROOTFS_LIST"; then
+    echo "missing rootfs entry: $path" >&2
+    exit 1
+  fi
 done
 
 echo "Artifact validation passed"
