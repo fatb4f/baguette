@@ -12,7 +12,7 @@ mkdir -p \
   "$ROOTFS/usr/local/lib/baguette" \
   "$ROOTFS/etc"
 
-cat > "$ROOTFS/etc/systemd/system/opt-google-cros-containers.mount" <<'EOF'
+cat > "$ROOTFS/etc/systemd/system/opt-google-cros\\x2dcontainers.mount" <<'EOF'
 [Unit]
 Description=ChromeOS guest tools mount
 DefaultDependencies=no
@@ -33,8 +33,8 @@ EOF
 cat > "$ROOTFS/etc/systemd/system/vshd.service" <<'EOF'
 [Unit]
 Description=ChromeOS vshd
-Requires=opt-google-cros-containers.mount
-After=opt-google-cros-containers.mount
+Requires=opt-google-cros\\x2dcontainers.mount
+After=opt-google-cros\\x2dcontainers.mount
 ConditionPathExists=/opt/google/cros-containers/bin/vshd
 
 [Service]
@@ -49,8 +49,8 @@ EOF
 cat > "$ROOTFS/etc/systemd/system/maitred.service" <<'EOF'
 [Unit]
 Description=ChromeOS maitred
-Requires=opt-google-cros-containers.mount
-After=opt-google-cros-containers.mount
+Requires=opt-google-cros\\x2dcontainers.mount
+After=opt-google-cros\\x2dcontainers.mount
 ConditionPathExists=/opt/google/cros-containers/bin/maitred
 
 [Service]
@@ -66,8 +66,8 @@ EOF
 cat > "$ROOTFS/etc/systemd/system/port-listener.service" <<'EOF'
 [Unit]
 Description=ChromeOS port listener
-Requires=opt-google-cros-containers.mount
-After=opt-google-cros-containers.mount
+Requires=opt-google-cros\\x2dcontainers.mount
+After=opt-google-cros\\x2dcontainers.mount
 ConditionPathExists=/opt/google/cros-containers/bin/port_listener
 
 [Service]
@@ -79,7 +79,7 @@ Restart=on-failure
 WantedBy=basic.target
 EOF
 
-ln -sf ../opt-google-cros-containers.mount "$ROOTFS/etc/systemd/system/local-fs.target.wants/opt-google-cros-containers.mount"
+ln -sf ../opt-google-cros\\x2dcontainers.mount "$ROOTFS/etc/systemd/system/local-fs.target.wants/opt-google-cros\\x2dcontainers.mount"
 ln -sf ../vshd.service "$ROOTFS/etc/systemd/system/basic.target.wants/vshd.service"
 ln -sf ../maitred.service "$ROOTFS/etc/systemd/system/basic.target.wants/maitred.service"
 ln -sf ../port-listener.service "$ROOTFS/etc/systemd/system/basic.target.wants/port-listener.service"
