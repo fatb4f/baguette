@@ -11,7 +11,7 @@ On push to `main`, pull requests, and manual dispatch, the workflow:
 1. Runs `scripts/setup-host.sh` on `ubuntu-24.04`.
 2. Builds an Arch rootfs tarball with `scripts/build-rootfs-tarball.sh`.
 3. Builds a raw Btrfs image with `scripts/make-baguette-image.sh`.
-4. Validates that all expected output files exist.
+4. Validates artifact presence, compression integrity, and the expected guest integration files.
 5. Uploads a single artifact named `arch-baguette-image`.
 
 ## Artifact contract

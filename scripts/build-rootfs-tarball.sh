@@ -41,9 +41,9 @@ pacstrap -c -G -M /work/rootfs \
 EOF
 chmod +x "$WORKDIR/build-rootfs-in-docker.sh"
 
-docker pull archlinux:latest
+sudo docker pull archlinux:latest
 
-docker run --rm \
+sudo docker run --rm \
   -v "$WORKDIR:/work" \
   archlinux:latest \
   /work/build-rootfs-in-docker.sh

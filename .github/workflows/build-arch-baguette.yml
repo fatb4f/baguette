@@ -19,6 +19,8 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          persist-credentials: false
 
       - name: Setup host
         run: |
@@ -37,10 +39,8 @@ jobs:
 
       - name: Validate artifacts
         run: |
-          test -f out/arch-rootfs.tar
-          test -f out/arch-rootfs.tar.zst
-          test -f out/arch-baguette.img
-          test -f out/arch-baguette.img.zst
+          chmod +x scripts/*.sh
+          ./scripts/validate-artifacts.sh
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
