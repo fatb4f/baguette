@@ -86,7 +86,16 @@ ln -sf "../$MOUNT_UNIT" "$SYSTEMD_LOCAL_FS_WANTS_DIR/$MOUNT_UNIT"
 ln -sf ../vshd.service "$SYSTEMD_WANTS_DIR/vshd.service"
 ln -sf ../maitred.service "$SYSTEMD_WANTS_DIR/maitred.service"
 ln -sf ../port-listener.service "$SYSTEMD_WANTS_DIR/port-listener.service"
-ln -sf ../bin/usermod "$ROOTFS/usr/sbin/usermod"
+
+if [ -L "$ROOTFS/usr/sbin" ]; then
+  rm -f "$ROOTFS/usr/sbin"
+fi
+mkdir -p "$ROOTFS/usr/sbin"
+cat > "$ROOTFS/usr/sbin/usermod" <<'EOF'
+#!/bin/sh
+exec /usr/bin/usermod "$@"
+EOF
+chmod 0755 "$ROOTFS/usr/sbin/usermod"
 
 cat > "$ROOTFS/etc/hosts" <<'EOF'
 127.0.0.1 localhost
