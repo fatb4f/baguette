@@ -22,28 +22,21 @@ jobs:
         with:
           persist-credentials: false
 
-      - name: Restore rootfs cache
-        id: rootfs-cache
-        uses: actions/cache@v4
-        with:
-          path: |
-            out/arch-rootfs.tar
-            out/arch-rootfs.tar.zst
-          key: arch-rootfs-${{ runner.os }}-${{ hashFiles('scripts/build-rootfs-tarball.sh', 'scripts/install-overlay.sh') }}
-          restore-keys: |
-            arch-rootfs-${{ runner.os }}-
-
       - name: Setup host
-        if: hashFiles('out/arch-rootfs.tar') == ''
         run: |
           chmod +x scripts/setup-host.sh
           ./scripts/setup-host.sh
 
       - name: Build Arch rootfs tarball
-        if: hashFiles('out/arch-rootfs.tar') == ''
         run: |
           chmod +x scripts/*.sh
           sudo ./scripts/build-rootfs-tarball.sh
+
+      - name: Validate rootfs contents
+        run: |
+          tar -tf out/arch-rootfs.tar | grep -Fx './usr/bin/usermod'
+          tar -tf out/arch-rootfs.tar | grep -Fx './usr/sbin/usermod'
+          tar -tf out/arch-rootfs.tar | grep -F 'etc/systemd/system/opt-google-cros'
 
       - name: Upload rootfs artifacts
         uses: actions/upload-artifact@v4
