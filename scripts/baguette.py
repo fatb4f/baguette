@@ -5,6 +5,7 @@ import argparse
 import re
 import subprocess
 import sys
+import shutil
 from pathlib import Path
 
 
@@ -26,6 +27,14 @@ def mountpoint_is_active(path: Path) -> bool:
 
 def losetup_image(image_path: Path) -> str:
     return run(["losetup", "--find", "--show", str(image_path)], capture_output=True).stdout.strip()
+
+
+def create_raw_image(image_path: Path, image_size: str) -> None:
+    if shutil.which("qemu-img"):
+        run(["qemu-img", "create", "-f", "raw", str(image_path), image_size])
+        return
+
+    run(["truncate", "-s", image_size, str(image_path)])
 
 
 def parse_subvolume_id(output: str) -> int:
@@ -61,7 +70,7 @@ def build_image(rootfs_tar: Path, image_path: Path, image_size: str, compression
     mount_dir.mkdir(parents=True, exist_ok=True)
 
     try:
-        run(["qemu-img", "create", "-f", "raw", str(image_path), image_size])
+        create_raw_image(image_path, image_size)
         loop_device = losetup_image(image_path)
         run(["mkfs.btrfs", "-f", loop_device])
         run(["mount", loop_device, str(mount_dir)])
