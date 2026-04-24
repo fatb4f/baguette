@@ -12,9 +12,14 @@ mkdir -p \
   "$SYSTEMD_DIR" \
   "$SYSTEMD_WANTS_DIR" \
   "$SYSTEMD_LOCAL_FS_WANTS_DIR" \
-  "$ROOTFS/usr/sbin" \
   "$ROOTFS/usr/local/lib/baguette" \
   "$ROOTFS/etc"
+
+if [ -L "$ROOTFS/usr/sbin" ]; then
+  rm -f "$ROOTFS/usr/sbin"
+fi
+
+install -d "$ROOTFS/usr/sbin"
 
 cat > "$SYSTEMD_DIR/$MOUNT_UNIT" <<EOF
 [Unit]
@@ -86,13 +91,7 @@ ln -sf "../$MOUNT_UNIT" "$SYSTEMD_LOCAL_FS_WANTS_DIR/$MOUNT_UNIT"
 ln -sf ../vshd.service "$SYSTEMD_WANTS_DIR/vshd.service"
 ln -sf ../maitred.service "$SYSTEMD_WANTS_DIR/maitred.service"
 ln -sf ../port-listener.service "$SYSTEMD_WANTS_DIR/port-listener.service"
-test -x "$ROOTFS/usr/bin/usermod"
-
-if [ -L "$ROOTFS/usr/sbin" ]; then
-  rm -f "$ROOTFS/usr/sbin"
-fi
-
-install -d "$ROOTFS/usr/sbin"
+test -f "$ROOTFS/usr/bin/usermod"
 
 cat > "$ROOTFS/usr/sbin/usermod" <<'EOF'
 #!/bin/sh
@@ -103,8 +102,8 @@ chmod 0755 "$ROOTFS/usr/sbin/usermod"
 
 test ! -L "$ROOTFS/usr/sbin"
 test -d "$ROOTFS/usr/sbin"
-test -x "$ROOTFS/usr/bin/usermod"
-test -x "$ROOTFS/usr/sbin/usermod"
+test -f "$ROOTFS/usr/bin/usermod"
+test -f "$ROOTFS/usr/sbin/usermod"
 
 cat > "$ROOTFS/etc/hosts" <<'EOF'
 127.0.0.1 localhost
