@@ -76,6 +76,43 @@ jobs:
           name: arch-rootfs-intermediate
           path: out
 
+      - name: Validate rootfs contents
+        run: |
+          tar -tf out/arch-rootfs.tar | grep -Fx './usr/bin/usermod'
+          tar -tf out/arch-rootfs.tar | grep -Fx './usr/sbin/usermod'
+          tar -tf out/arch-rootfs.tar | grep -F 'etc/systemd/system/opt-google-cros'
+
+      - name: Upload rootfs artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: arch-rootfs-intermediate
+          path: |
+            out/arch-rootfs.tar
+            out/arch-rootfs.tar.zst
+          if-no-files-found: error
+
+  build-image:
+    runs-on: ubuntu-24.04
+    needs: build-rootfs
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      - name: Setup host
+        run: |
+          chmod +x scripts/setup-host.sh
+          ./scripts/setup-host.sh
+
+      - name: Download rootfs artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: arch-rootfs-intermediate
+          path: out
+
       - name: Build Baguette image
         run: |
           chmod +x scripts/*.sh
