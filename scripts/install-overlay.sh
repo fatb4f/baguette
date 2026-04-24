@@ -2,39 +2,42 @@
 set -euo pipefail
 
 ROOTFS="${1:?usage: install-overlay.sh <rootfs-dir>}"
+MOUNT_UNIT='opt-google-cros\x2dcontainers.mount'
+SYSTEMD_DIR="$ROOTFS/etc/systemd/system"
+SYSTEMD_WANTS_DIR="$SYSTEMD_DIR/multi-user.target.wants"
+SYSTEMD_LOCAL_FS_WANTS_DIR="$SYSTEMD_DIR/local-fs.target.wants"
 
 mkdir -p \
   "$ROOTFS/opt/google/cros-containers" \
-  "$ROOTFS/etc/systemd/system" \
-  "$ROOTFS/etc/systemd/system/basic.target.wants" \
-  "$ROOTFS/etc/systemd/system/local-fs.target.wants" \
+  "$SYSTEMD_DIR" \
+  "$SYSTEMD_WANTS_DIR" \
+  "$SYSTEMD_LOCAL_FS_WANTS_DIR" \
   "$ROOTFS/usr/sbin" \
   "$ROOTFS/usr/local/lib/baguette" \
   "$ROOTFS/etc"
 
-cat > "$ROOTFS/etc/systemd/system/opt-google-cros\\x2dcontainers.mount" <<'EOF'
+cat > "$SYSTEMD_DIR/$MOUNT_UNIT" <<EOF
 [Unit]
-Description=ChromeOS guest tools mount
+Description=ChromeOS cros-vm-tools mount
 DefaultDependencies=no
-Before=local-fs.target umount.target
+Before=local-fs.target
 Conflicts=umount.target
 
 [Mount]
 What=LABEL=cros-vm-tools
 Where=/opt/google/cros-containers
-Type=auto
-Options=ro
-TimeoutSec=10
+Type=ext4
+Options=ro,nofail,x-systemd.device-timeout=10s
 
 [Install]
 WantedBy=local-fs.target
 EOF
 
-cat > "$ROOTFS/etc/systemd/system/vshd.service" <<'EOF'
+cat > "$SYSTEMD_DIR/vshd.service" <<EOF
 [Unit]
-Description=ChromeOS vshd
-Requires=opt-google-cros\\x2dcontainers.mount
-After=opt-google-cros\\x2dcontainers.mount
+Description=ChromeOS vshd guest agent
+Requires=$MOUNT_UNIT
+After=$MOUNT_UNIT
 ConditionPathExists=/opt/google/cros-containers/bin/vshd
 
 [Service]
@@ -43,14 +46,14 @@ ExecStart=/opt/google/cros-containers/bin/vshd
 Restart=on-failure
 
 [Install]
-WantedBy=basic.target
+WantedBy=multi-user.target
 EOF
 
-cat > "$ROOTFS/etc/systemd/system/maitred.service" <<'EOF'
+cat > "$SYSTEMD_DIR/maitred.service" <<EOF
 [Unit]
-Description=ChromeOS maitred
-Requires=opt-google-cros\\x2dcontainers.mount
-After=opt-google-cros\\x2dcontainers.mount
+Description=ChromeOS maitred guest agent
+Requires=$MOUNT_UNIT
+After=$MOUNT_UNIT
 ConditionPathExists=/opt/google/cros-containers/bin/maitred
 
 [Service]
@@ -60,14 +63,14 @@ ExecStart=/opt/google/cros-containers/bin/maitred
 Restart=on-failure
 
 [Install]
-WantedBy=basic.target
+WantedBy=multi-user.target
 EOF
 
-cat > "$ROOTFS/etc/systemd/system/port-listener.service" <<'EOF'
+cat > "$SYSTEMD_DIR/port-listener.service" <<EOF
 [Unit]
 Description=ChromeOS port listener
-Requires=opt-google-cros\\x2dcontainers.mount
-After=opt-google-cros\\x2dcontainers.mount
+Requires=$MOUNT_UNIT
+After=$MOUNT_UNIT
 ConditionPathExists=/opt/google/cros-containers/bin/port_listener
 
 [Service]
@@ -76,13 +79,13 @@ ExecStart=/opt/google/cros-containers/bin/port_listener
 Restart=on-failure
 
 [Install]
-WantedBy=basic.target
+WantedBy=multi-user.target
 EOF
 
-ln -sf ../opt-google-cros\\x2dcontainers.mount "$ROOTFS/etc/systemd/system/local-fs.target.wants/opt-google-cros\\x2dcontainers.mount"
-ln -sf ../vshd.service "$ROOTFS/etc/systemd/system/basic.target.wants/vshd.service"
-ln -sf ../maitred.service "$ROOTFS/etc/systemd/system/basic.target.wants/maitred.service"
-ln -sf ../port-listener.service "$ROOTFS/etc/systemd/system/basic.target.wants/port-listener.service"
+ln -sf "../$MOUNT_UNIT" "$SYSTEMD_LOCAL_FS_WANTS_DIR/$MOUNT_UNIT"
+ln -sf ../vshd.service "$SYSTEMD_WANTS_DIR/vshd.service"
+ln -sf ../maitred.service "$SYSTEMD_WANTS_DIR/maitred.service"
+ln -sf ../port-listener.service "$SYSTEMD_WANTS_DIR/port-listener.service"
 ln -sf ../bin/usermod "$ROOTFS/usr/sbin/usermod"
 
 cat > "$ROOTFS/etc/hosts" <<'EOF'
