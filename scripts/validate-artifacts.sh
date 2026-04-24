@@ -8,6 +8,7 @@ ROOTFS_TAR_ZST="$OUTDIR/arch-rootfs.tar.zst"
 IMG="$OUTDIR/arch-baguette.img"
 IMG_ZST="$OUTDIR/arch-baguette.img.zst"
 MOUNT_UNIT='opt-google-cros\x2dcontainers.mount'
+TAR_MOUNT_UNIT="${MOUNT_UNIT//\\/\\\\}"
 
 ROOTFS_LIST="$(mktemp)"
 trap 'rm -f "$ROOTFS_LIST"' EXIT
@@ -24,7 +25,7 @@ tar -tf "$ROOTFS_TAR" > "$ROOTFS_LIST"
 
 for path in \
   "etc/hostname" \
-  "etc/systemd/system/$MOUNT_UNIT" \
+  "etc/systemd/system/$TAR_MOUNT_UNIT" \
   "etc/systemd/system/vshd.service" \
   "etc/systemd/system/maitred.service" \
   "usr/sbin/usermod" \
